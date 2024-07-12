@@ -159,6 +159,7 @@ close(BodyIn) ->
 
 %% -----------------------------------------------------------------------------
 % 支付通知API
+% @doc https://pay.weixin.qq.com/wiki/doc/apiv3/apis/chapter3_1_5.shtml
 % 请求方式：POST
 % 参数名              变量              类型[长度限制]     必填  描述
 % 通知ID              id                string[1,36]       是    通知的唯一ID
