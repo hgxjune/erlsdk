@@ -23,8 +23,8 @@ eunit:
 run: compile
 	@$(ERL) \
 		+P 262144 \
-		-name diviner@127.0.0.1 \
-		-setcookie bzez964uq285f9zeg8efh7448zxs33eu \
+		-name erlsdk@127.0.0.1 \
+		-setcookie uekfqx8v92q7f22rf6b8guy2p7mud94v \
 		-config config/sys.config \
 		-pa _build/default/lib/cowboy/ebin \
 		-pa _build/default/lib/cowlib/ebin \
@@ -51,7 +51,7 @@ test:
 		-pa _build/default/lib/quickrand/ebin \
 		-pa _build/default/lib/ranch/ebin \
 		-pa _build/default/lib/uuid/ebin \
-		-pa _build/test/lib/diviner/ebin \
+		-pa _build/test/lib/erlsdk/ebin \
 		-s erlsdk_test run \
 		-s init stop \
 		-cwd test

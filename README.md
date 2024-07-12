@@ -17,7 +17,7 @@ callback()          -> <<"https://xxxx.yyyyy.com/sdk/wechat/pay/callback">>.
 ```
 重点：
 1.  解密回调报文：erlang 对 AEAD_AES_256_GCM 的解密，需要手工设置 DecryptTag，详见`wechat_tool:aead_aes_256_gcm_decrypt/1`
-2.  支付结果通知的《支付API v3签名》验签：对 x509 SHA256 with RSA 格式的证书操作，需要对证书进行解码。详见`wechat_tool:rsa_sha256_verify/3`。
+2.  支付结果通知《支付API v3签名》验签：对 x509 SHA256 with RSA 格式的证书操作，需要解码。详见`wechat_tool:rsa_sha256_verify/3`。
 
 
 apple 接入

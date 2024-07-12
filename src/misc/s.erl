@@ -19,7 +19,7 @@
 s() ->
     [?debug(Info) || Info <- string:replace( os:cmd("rebar3 compile"), "\n", "", all ), Info =/= []],
     l(erlsdk),
-    ?debug("cowboy:set_env dispatch: ~p", [diviner_socket:reload_dispatch()]).
+    ?debug("cowboy:set_env dispatch: ~p", [erlsdk_socket:reload_dispatch()]).
 
 %% 重新载入默认 app
 l() ->

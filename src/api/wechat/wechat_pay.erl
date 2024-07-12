@@ -207,14 +207,14 @@ callback(Req0, Body) ->
     try
         true = verify_signature(Req0, Body),
         ok   = pay_item(Body),
-        diviner_web:reply_200(Req0, jsx:encode(#{ code => <<"SUCCESS">>, message => <<"SUCCESS">>}))
+        erlsdk_web:reply_200(Req0, jsx:encode(#{ code => <<"SUCCESS">>, message => <<"SUCCESS">>}))
     catch
         throw:Reason:_Stack ->
             ?debug("wechat_pay callback throw: ~p", [Reason]),
-            diviner_web:reply_200(Req0, jsx:encode(#{ code => <<"SUCCESS">>, message => <<"SUCCESS">>}));
+            erlsdk_web:reply_200(Req0, jsx:encode(#{ code => <<"SUCCESS">>, message => <<"SUCCESS">>}));
         Class:Reason:Stack ->
             ?debug("wechat_pay callback error, Class: ~p, Reason: ~p, Stack: ~p", [Class, Reason, Stack]),
-            diviner_web:reply_200(Req0, jsx:encode(#{ code => <<"SUCCESS">>, message => <<"SUCCESS">>}))
+            erlsdk_web:reply_200(Req0, jsx:encode(#{ code => <<"SUCCESS">>, message => <<"SUCCESS">>}))
     end.
 
 
