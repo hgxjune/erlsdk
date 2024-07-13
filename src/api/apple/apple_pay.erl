@@ -12,7 +12,9 @@
 -export([sandbox/1]).
 
 %% public functions
+%%------------------------------------------------------------------------------
 % @doc https://developer.apple.com/documentation/appstoreservernotifications/app_store_server_notifications_v2
+% 回调地址填写： https://developer.apple.com/help/app-store-connect/configure-in-app-purchase-settings/enter-server-urls-for-app-store-server-notifications
 
 produce(BodyIn) ->
     ?debug("assnv2 produce"),
@@ -26,6 +28,7 @@ sandbox(BodyIn) ->
 
 
 %% internal functions
+%%------------------------------------------------------------------------------
 do_assnv2(BodyIn) ->
     DataIn                      = jsx:decode(BodyIn),
     SignedPayload               = maps:get(<<"signedPayload">>, DataIn, undefined),
@@ -111,6 +114,8 @@ do_assnv2(BodyIn) ->
     ok.
 
 
+% jws 解码，使用 IETF RFC 7515 - https://datatracker.ietf.org/doc/html/rfc7515
+% @doc https://developer.apple.com/documentation/appstoreservernotifications/signedpayload
 unpack_payload(JWS) ->
     [H, P, S]   = binary:split(JWS, <<".">>, [global]),
     Header      = jsx:decode( base64:decode(H, #{padding => false, mode => urlsafe}) ),

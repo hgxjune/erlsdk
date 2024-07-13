@@ -11,6 +11,7 @@
 -export([login/1]).
 
 %% public functions
+% @doc https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api
 % 两种验证方式
 % 1.  对客户端的 identityToken 进行 JWT 算法验证
 % 2.  基于授权码的验证 OAuth 2.0
@@ -83,6 +84,7 @@ login(BodyIn) ->
 %% internal functions
 %%------------------------------------------------------------------------------
 % 1.  对客户端的 identityToken 进行 JWT 算法验证
+% @doc https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/authenticating_users_with_sign_in_with_apple
 validate_client_token(Token) ->
     [H, D, S]   = binary:split(Token, <<".">>, [global]),
     Content     = <<H/binary, ".", D/binary>>,
@@ -100,6 +102,7 @@ validate_client_token(Token) ->
 %%------------------------------------------------------------------------------
 % 2.  基于授权码的验证 OAuth 2.0
 % Generate and validate tokens
+% @doc https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/verifying_a_user
 % @doc https://developer.apple.com/documentation/sign_in_with_apple/generate_and_validate_tokens
 
 % URL: POST https://appleid.apple.com/auth/token
@@ -127,7 +130,7 @@ generate_and_validate_tokens(AuthorCode) ->
                   , {<<"grant_type">>    , <<"authorization_code">>}
                   ],
     HttpBody    = uri_string:compose_query(DataMaps),
-    Url         = apple_config:auth_token(),
+    Url         = apple_config:url_auth_token(),
     ContentType = "application/x-www-form-urlencoded",
     Request     = {Url, [], ContentType, HttpBody},
     HttpOpts    = [{timeout, 5000}],
@@ -162,7 +165,7 @@ generate_and_validate_tokens(AuthorCode) ->
 % n               string      The modulus value for the RSA public key.
 % use             string      The intended use for the public key.
 auth_keys(KeyId) ->
-    Url      = apple_config:auth_keys(),
+    Url      = apple_config:url_auth_keys(),
     Headers  = [],
     Request  = {Url, Headers},
     HttpOpts = [{timeout, 5000}],
@@ -192,7 +195,7 @@ jwk2key(JWK) ->
 % @doc https://developer.apple.com/documentation/accountorganizationaldatasharing/creating-a-client-secret
 client_secret() ->
     Headers = #{ alg => <<"ES256">>
-               , kid => apple_config:key_id()
+               , kid => apple_config:auth_key_id()
                },
     TS      = utils:timestamp(),
     Payload = #{ iss => apple_config:team_id()
@@ -201,37 +204,8 @@ client_secret() ->
                , aud => <<"https://appleid.apple.com">>
                , sub => apple_config:client_id()
                },
-    H       = base64:encode( jsx:encode(Headers), #{padding => false, mode => urlsafe} ),
-    P       = base64:encode( jsx:encode(Payload), #{padding => false, mode => urlsafe} ),
+    PriKey  = apple_config:auth_key(),
+    apple_tool:jwt(Headers, Payload, PriKey).
 
-    Content = <<H/binary, ".", P/binary>>,
-    PriKey  = apple_config:private_key(),
 
-    [Entry] = public_key:pem_decode(PriKey),
-    RSAKey  = public_key:pem_entry_decode(Entry),
-    SignBin = public_key:sign(Content, sha256, RSAKey),
-    SignRaw = raw(SignBin),
-    SignB64 = base64:encode(SignRaw, #{padding => false, mode => urlsafe}),
-
-    Secret  = <<Content/binary, ".", SignB64/binary>>,
-    Secret.
-
-% 参考 https://github.com/artemeff/jwt
-% Transcodes the JCA ASN.1/DER-encoded signature into the concatenated R + S format
-% jwt_ecdsa:signature/3
-raw(Der) ->
-    #'ECDSA-Sig-Value'{ r = R, s = S } = public_key:der_decode('ECDSA-Sig-Value', Der),
-    RBin = int_to_bin(R),
-    SBin = int_to_bin(S),
-    <<RBin/binary, SBin/binary>>.
-
-%% @private
-int_to_bin(X) ->
-    int_to_bin_pos(X, []).
-
-%% @private
-int_to_bin_pos(0, Ds = [_|_]) ->
-    list_to_binary(Ds);
-int_to_bin_pos(X, Ds) ->
-    int_to_bin_pos(X bsr 8, [(X band 255)|Ds]).
 

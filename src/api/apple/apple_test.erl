@@ -5,32 +5,43 @@
 % @since 2024-07-13 
 %%------------------------------------------------------------------------------
 -module(apple_test).
+-include("debug.hrl").
 
 -export([notifications/1]).
 
 %% public functions
 % @doc https://developer.apple.com/documentation/appstoreserverapi/request_a_test_notification
+notifications(1)        -> notifications(sandbox);
+notifications(2)        -> notifications(produce);
+notifications(sandbox)  -> do_notifications( apple_config:url_test_sandbox() );
+notifications(produce)  -> do_notifications( apple_config:url_test_produce() );
+notifications(_)        ->
+    io:format("notifications:\n"
+              "  - 1         see sandbox.\n"
+              "  - sandbox   Request a Test Notification to Sandbox.\n"
+              "  - 2         see produce.\n"
+              "  - produce   Request a Test Notification to Produce.\n"
+          ),
+    ok.
 
-t1() -> t("https://api.storekit-sandbox.itunes.apple.com/inApps/v1/notifications/test").
-t2() -> t("https://api.storekit.itunes.apple.com/inApps/v1/notifications/test").
-
-
-t(Url) ->
-    JWT         = request_jwt(),
+do_notifications(Url) ->
     HttpBody    = jsx:encode(#{}),
     ContentType = "application/json",
+
+    JWT         = purchase_token(),
     Author      = <<"Bearer ", JWT/binary>>,
     HttpHeaders = [ {"authorization", Author} ],
+
     Request     = {Url, HttpHeaders, ContentType, HttpBody},
     HttpOpts    = [{timeout, 5000}],
     Options     = [],
 
     case httpc:request(post, Request, HttpOpts, Options) of
         {ok, {_S, _H, RBody}} ->
-            ?debug("notifications/test request, StatusLine: ~p, HttpHeader: ~p, Body: ~p, HttpBody: ~p", [_S, _H, RBody, HttpBody]),
+            ?debug("notifications/test request, StatusLine: ~p, Body: ~p, HttpBody: ~p", [_S, RBody, HttpBody]),
             ok;
         Err->
-            ?WARNING("notifications/test request err, HttpBody: ~p, Err: ~p", [HttpBody, Err]),
+            ?debug("notifications/test request err, HttpBody: ~p, Err: ~p", [HttpBody, Err]),
             ok
     end.
 
@@ -39,29 +50,19 @@ t(Url) ->
 %% internal functions
 %%------------------------------------------------------------------------------
 % @doc https://developer.apple.com/documentation/appstoreserverapi/generating_json_web_tokens_for_api_requests
-request_jwt() ->
+purchase_token() ->
     Headers = #{ alg => <<"ES256">>
-               , kid => <<"5U233C98Q5">>
+               , kid => apple_config:purchase_key_id()
                , typ => <<"JWT">>
                },
     TS      = utils:timestamp(),
-    Payload = #{ iss => <<"63a4fe73-41e0-401b-ab0e-6bd5a86c2781">>
+    Payload = #{ iss => apple_config:issuer_id()
                , iat => TS
-               , exp => TS + 3600  % 此处时间设置在 1 小时以内，否则会 401
+               , exp => TS + 1800  % 此处时间设置在 1 小时以内，否则会 401
                , aud => <<"appstoreconnect-v1">>
-               , bid => <<"com.ios.zyppds">>
+               , bid => apple_config:bundle_id()
                },
-    H       = base64:encode( jsx:encode(Headers), #{padding => false, mode => urlsafe} ),
-    P       = base64:encode( jsx:encode(Payload), #{padding => false, mode => urlsafe} ),
+    PriKey  = apple_config:purchase_key(),
+    apple_tool:jwt(Headers, Payload, PriKey).
 
-    Content = <<H/binary, ".", P/binary>>,
-    PriKey  = <<"-----BEGIN PRIVATE KEY-----\nMIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgUKwpbCv16GbSMJELiYpgRTYdJbqpDi92fvcMF2WZY1agCgYIKoZIzj0DAQehRANCAASfOzyvl39xl5KKRgY8Yk+LJq9jTiI5r030JaporSnOGmxfz/D65N0mm1rrF+kWKEwNVrE0VDcs6MTnevBnsZgB\n-----END PRIVATE KEY-----">>,
 
-    [Entry] = public_key:pem_decode(PriKey),
-    RSAKey  = public_key:pem_entry_decode(Entry),
-    SignBin = public_key:sign(Content, sha256, RSAKey),
-    SignRaw = raw(SignBin),
-    SignB64 = base64:encode(SignRaw, #{padding => false, mode => urlsafe}),
-
-    Secret  = <<Content/binary, ".", SignB64/binary>>,
-    Secret.
