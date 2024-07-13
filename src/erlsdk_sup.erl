@@ -29,24 +29,5 @@ init([]) ->
     SupFlags = #{strategy => one_for_all,
                  intensity => 0,
                  period => 1},
-    ChildSpecs = [ pack_normal_worker(mod_ets, []) ],
+    ChildSpecs = [],
     {ok, {SupFlags, ChildSpecs}}.
-
-%% internal functions
-pack_normal_worker(Mod, Args) ->
-    #{ id       => Mod
-     , start    => {Mod, start_link, Args}
-     , restart  => permanent
-     , shutdown => 5000
-     , type     => worker
-     , modules  => [Mod]
-     }.
-
-% pack_normal_srpervisor(Mod, Args) ->
-%     #{ id       => Mod
-%      , start    => {Mod, start_link, Args}
-%      , restart  => transient
-%      , shutdown => infinity
-%      , type     => supervisor
-%      , modules  => [Mod]
-%      }.

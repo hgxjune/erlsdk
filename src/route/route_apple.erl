@@ -51,8 +51,6 @@ request_post(Req0, Opts) ->
 
 request_post(Req0, _,                               <<>>) -> erlsdk_web:reply_404(Req0, <<"{\"code\":99,\"message\":\"err\"}">>);
 request_post(Req0, <<"/sdk/apple/user/login">>,     Body) -> erlsdk_web:reply_200(Req0, apple_user:login(Body));
-request_post(Req0, <<"/sdk/apple/pay/create">>,     Body) -> erlsdk_web:reply_200(Req0, apple_pay:create(Body));
-request_post(Req0, <<"/sdk/apple/pay/query">>,      Body) -> erlsdk_web:reply_200(Req0, apple_pay:query(Body));
 request_post(Req0, <<"/sdk/apple/assnv2/produce">>, Body) -> erlsdk_web:reply_200(Req0, apple_pay:produce(Body));
 request_post(Req0, <<"/sdk/apple/assnv2/sandbox">>, Body) -> erlsdk_web:reply_200(Req0, apple_pay:sandbox(Body));
 
